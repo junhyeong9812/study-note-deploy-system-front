@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Header from "@/components/Header";
 import { backendGet, newRequestId, type TreeData, type TreeNode } from "@/lib/backend";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,8 @@ export default async function HomePage() {
   const treeData = await backendGet<TreeData>("/api/tree", requestId);
   const buckets = treeData.tree.children;
   return (
+    <div>
+    <Header />
     <main style={{ maxWidth: 900, margin: "0 auto", padding: "3rem 1.5rem" }}>
       <h1 style={{ marginBottom: "0.5rem" }}>study-note</h1>
       <p style={{ color: "var(--muted)", marginBottom: "2rem" }}>
@@ -31,5 +34,6 @@ export default async function HomePage() {
         ))}
       </ul>
     </main>
+    </div>
   );
 }
