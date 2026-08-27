@@ -1,0 +1,17 @@
+services:
+  front:
+    build: .
+    container_name: front-app
+    ports:
+      - "11000:11000"        # 오라클 www.junproject.xyz conf가 이 포트로 프록시 (재활용)
+    environment:
+      BACKEND_URL: ${BACKEND_URL:?set-in-env}      # backend(.158) — repo에 IP 금지
+      LOG_REDIS_URL: ${LOG_REDIS_URL:-}
+      SERVER_NAME: front
+    healthcheck:
+      # localhost 금지 — 컨테이너 안에서 ::1로 풀리는 함정 (규약)
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:11000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
