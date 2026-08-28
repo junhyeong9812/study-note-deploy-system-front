@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveHref } from "../../lib/links";
+import { resolveHref } from "./links";
 
 describe("resolveHref — 노트 상대 링크 → /wiki 경로", () => {
   it("상대·상위 이동·.md 제거", () => {

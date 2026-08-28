@@ -1,6 +1,6 @@
 /** backend BFF 헬퍼 — 봉투 해제 + requestId 발행(진입 서버 = front, 규약 v2).
  * backend는 X-Request-Id를 검증(acceptOrIssue)해 그대로 쓴다. */
-import { log } from "./logger";
+import { log } from "@/shared/lib/logger";
 
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8090";
 

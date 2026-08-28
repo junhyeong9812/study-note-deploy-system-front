@@ -2,7 +2,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
-import { resolveHref } from "@/lib/links";
+import { resolveHref } from "@/features/wiki/lib/links";
 
 
 

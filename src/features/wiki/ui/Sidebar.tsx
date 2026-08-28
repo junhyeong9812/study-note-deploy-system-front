@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { TreeNode } from "@/lib/backend";
+import type { TreeNode } from "@/shared/api/backend";
 
 function NodeLink({ node, currentPath }: { node: TreeNode; currentPath: string }) {
   const isActive = currentPath === node.path || currentPath.startsWith(node.path + "/");

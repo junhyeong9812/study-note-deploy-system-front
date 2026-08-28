@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { TreeNode } from "../backend";
-import { chapterTabs, findNode } from "../tree";
+import type { TreeNode } from "@/shared/api/backend";
+import { chapterTabs, findNode } from "./tree";
 
 const leaf = (name: string, path: string, kinds: string[]): TreeNode => ({
   name, path, is_subject: true, children: [],
