@@ -8,6 +8,7 @@ services:
       BACKEND_URL: ${BACKEND_URL:?set-in-env}      # backend(.158) — repo에 IP 금지
       LOG_REDIS_URL: ${LOG_REDIS_URL:-}
       SERVER_NAME: front
+      DEPLOY_MASTER_URL: ${DEPLOY_MASTER_URL:-}   # ci-cd master(.9:15000) — 배포 .env
     healthcheck:
       # localhost 금지 — 컨테이너 안에서 ::1로 풀리는 함정 (규약)
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:11000/ || exit 1"]
