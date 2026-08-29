@@ -1,5 +1,5 @@
 import Link from "next/link";
-import SearchBar from "./SearchBar";
+import SearchBar from "@/shared/ui/SearchBar";
 
 export default function Header() {
   return (

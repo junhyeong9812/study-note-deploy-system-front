@@ -1,10 +1,10 @@
 import Link from "next/link";
 import Header from "@/shared/ui/Header";
-import Markdown from "./Markdown";
-import Sidebar from "./Sidebar";
-import Tabs from "./Tabs";
+import Markdown from "@/features/wiki/ui/Markdown";
+import Sidebar from "@/features/wiki/ui/Sidebar";
+import Tabs from "@/features/wiki/ui/Tabs";
 import type { DocData, TreeData, TreeNode } from "@/shared/api/backend";
-import { CHAPTER_KINDS, KIND_LABEL, otherDocs } from "../lib/tree";
+import { CHAPTER_KINDS, KIND_LABEL, otherDocs } from "@/features/wiki/lib/tree";
 
 function FolderView({ node }: { node: TreeNode }) {
   return (
