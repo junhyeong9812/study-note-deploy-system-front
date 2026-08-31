@@ -14,3 +14,13 @@ a:hover { text-decoration: underline; }
 code { background: var(--code-bg); padding: 0.15em 0.35em; border-radius: 4px; font-size: 0.9em; }
 pre { background: var(--code-bg); padding: 1rem; border-radius: 8px; overflow-x: auto; }
 pre code { background: none; padding: 0; }
+
+/* 마크다운 표 — 분할선이 보이도록 (이슈: 표 구조는 잡히나 경계선 없음) */
+.markdown table { border-collapse: collapse; margin: 1rem 0; display: block; overflow-x: auto; }
+.markdown th, .markdown td { border: 1px solid var(--line); padding: 0.45rem 0.8rem; font-size: 0.92rem; }
+.markdown th { background: var(--code-bg); font-weight: 700; }
+.markdown tr:nth-child(even) td { background: color-mix(in srgb, var(--code-bg) 40%, transparent); }
+.markdown blockquote { border-left: 3px solid var(--line); padding-left: 1rem; color: var(--muted); margin: 0.8rem 0; }
+.markdown h1, .markdown h2, .markdown h3 { margin: 1.4rem 0 0.6rem; }
+.markdown p, .markdown ul, .markdown ol { margin: 0.55rem 0; }
+.markdown ul, .markdown ol { padding-left: 1.4rem; }
