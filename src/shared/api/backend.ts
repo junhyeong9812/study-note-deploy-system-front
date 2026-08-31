@@ -44,7 +44,8 @@ export async function backendGet<T>(path: string, requestId: string): Promise<T>
 // ---- backend 계약 타입 (README의 API 계약) ----
 export interface TreeDocRef { path: string; doc_kind: string; form: string }
 export interface TreeNode {
-  name: string; path: string; docs: TreeDocRef[]; children: TreeNode[]; is_subject: boolean;
+  name: string; path: string; prev: string | null;   // 상위 폴더 경로 — 루트는 null (backend #21)
+  docs: TreeDocRef[]; children: TreeNode[]; is_subject: boolean;
 }
 export interface TreeData { commit_sha: string; tree: TreeNode }
 export interface DocData {

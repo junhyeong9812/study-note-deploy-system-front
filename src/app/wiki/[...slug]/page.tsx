@@ -17,9 +17,22 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
   const fetchDoc = (path: string) =>
     backendGet<DocData>(`/api/doc?path=${encodeURIComponent(path)}`, requestId);
 
+  // 사이드바 기준 폴더: 폴더면 자신, 주제/문서면 부모
+  const folderPath = node && !node.is_subject
+    ? currentPath
+    : currentPath.split("/").slice(0, -1).join("/");
+  const folder = findNode(treeData.tree, folderPath) ?? treeData.tree;
+
   let body;
   if (node && !node.is_subject) {
-    body = <FolderView node={node} />;
+    // 폴더 콘텐츠 = 그 폴더의 README (사양: 하위 나열은 사이드바 몫)
+    const readme = node.docs.find((doc) => doc.path.endsWith("README.md"));
+    if (readme) {
+      const doc = await fetchDoc(readme.path);
+      body = <Markdown markdown={doc.markdown || "*빈 README*"} docPath={doc.path} />;
+    } else {
+      body = <FolderView node={node} />;   // README 없는 폴더는 목록 폴백
+    }
   } else if (node && node.is_subject) {
     const docsByKind = new Map<string, DocData | null>();
     await Promise.all(node.docs.map(async (docRef: { doc_kind: string; path: string }) => {
@@ -35,5 +48,5 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
       notFound();
     }
   }
-  return <WikiView treeData={treeData} currentPath={currentPath} body={body} />;
+  return <WikiView treeData={treeData} folder={folder} folderPath={folderPath} body={body} />;
 }

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Header from "@/shared/ui/Header";
 import Markdown from "@/features/wiki/ui/Markdown";
-import Sidebar from "@/features/wiki/ui/Sidebar";
+import DrillSidebar from "@/features/wiki/ui/DrillSidebar";
 import Tabs from "@/features/wiki/ui/Tabs";
 import type { DocData, TreeData, TreeNode } from "@/shared/api/backend";
 import { CHAPTER_KINDS, KIND_LABEL, otherDocs } from "@/features/wiki/lib/tree";
@@ -73,17 +73,21 @@ export function SubjectView({ node, docsByKind, extras }: {
   );
 }
 
-export default function WikiView({ treeData, currentPath, body }: {
-  treeData: TreeData; currentPath: string; body: React.ReactNode;
+export default function WikiView({ treeData, folder, folderPath, body }: {
+  treeData: TreeData; folder: TreeNode; folderPath: string; body: React.ReactNode;
 }) {
   return (
     <div>
       <Header />
-      <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", maxWidth: 1200, margin: "0 auto" }}>
-        <aside style={{ borderRight: "1px solid var(--line)", padding: "0 1rem", minHeight: "calc(100vh - 53px)" }}>
-          <Sidebar tree={treeData.tree} currentPath={currentPath} />
+      {/* 전체 폭 — 사이드바는 화면 왼쪽 끝, 헤더 아래로 전체 높이 (이슈 #17) */}
+      <div style={{ display: "grid", gridTemplateColumns: "260px minmax(0, 1fr)" }}>
+        <aside style={{ borderRight: "1px solid var(--line)", padding: "0 1rem",
+                        minHeight: "calc(100vh - 53px)", background: "var(--bg)" }}>
+          <DrillSidebar folder={folder} folderPath={folderPath} />
         </aside>
-        <main style={{ padding: "2rem 2.5rem", minWidth: 0 }}>{body}</main>
+        <main style={{ padding: "2rem 2.5rem" }}>
+          <div style={{ maxWidth: 860 }}>{body}</div>   {/* 본문 가독 폭만 제한 */}
+        </main>
       </div>
     </div>
   );
