@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Header from "@/shared/ui/Header";
 import Markdown from "@/features/wiki/ui/Markdown";
+import ChatPanel from "@/features/chat/ui/ChatPanel";
 import DrillSidebar from "@/features/wiki/ui/DrillSidebar";
 import Tabs from "@/features/wiki/ui/Tabs";
 import type { DocData, TreeData, TreeNode } from "@/shared/api/backend";
@@ -73,21 +74,28 @@ export function SubjectView({ node, docsByKind, extras }: {
   );
 }
 
-export default function WikiView({ treeData, folder, folderPath, body }: {
+export default function WikiView({ treeData, folder, folderPath, body, chatDocPath }: {
   treeData: TreeData; folder: TreeNode; folderPath: string; body: React.ReactNode;
+  chatDocPath?: string | null;      // 있으면 우측 채팅 패널 렌더 (이슈 #25)
 }) {
+  const columns = chatDocPath ? "260px minmax(0, 1fr) 340px" : "260px minmax(0, 1fr)";
   return (
     <div>
       <Header />
-      {/* 전체 폭 — 사이드바는 화면 왼쪽 끝, 헤더 아래로 전체 높이 (이슈 #17) */}
-      <div style={{ display: "grid", gridTemplateColumns: "260px minmax(0, 1fr)" }}>
+      {/* 전체 폭 — 좌: 드릴다운, 우: 채팅(문서 페이지에서만) */}
+      <div style={{ display: "grid", gridTemplateColumns: columns }}>
         <aside style={{ borderRight: "1px solid var(--line)",
                         minHeight: "calc(100vh - 53px)", background: "var(--bg)" }}>
           <DrillSidebar folder={folder} folderPath={folderPath} />
         </aside>
-        <main style={{ padding: "2rem 2.5rem" }}>
-          <div style={{ maxWidth: 860 }}>{body}</div>   {/* 본문 가독 폭만 제한 */}
+        <main style={{ padding: "2rem 2.5rem", minWidth: 0 }}>
+          <div style={{ maxWidth: 860 }}>{body}</div>
         </main>
+        {chatDocPath && (
+          <aside style={{ borderLeft: "1px solid var(--line)", background: "var(--bg)" }}>
+            <ChatPanel docPath={chatDocPath} />
+          </aside>
+        )}
       </div>
     </div>
   );
