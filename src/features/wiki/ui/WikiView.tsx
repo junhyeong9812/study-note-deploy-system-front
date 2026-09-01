@@ -81,7 +81,7 @@ export default function WikiView({ treeData, folder, folderPath, body }: {
       <Header />
       {/* 전체 폭 — 사이드바는 화면 왼쪽 끝, 헤더 아래로 전체 높이 (이슈 #17) */}
       <div style={{ display: "grid", gridTemplateColumns: "260px minmax(0, 1fr)" }}>
-        <aside style={{ borderRight: "1px solid var(--line)", padding: "0 1rem",
+        <aside style={{ borderRight: "1px solid var(--line)",
                         minHeight: "calc(100vh - 53px)", background: "var(--bg)" }}>
           <DrillSidebar folder={folder} folderPath={folderPath} />
         </aside>

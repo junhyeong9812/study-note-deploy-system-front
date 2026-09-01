@@ -12,10 +12,10 @@ export default function DrillSidebar({ folder, folderPath }: {
     : folder.prev === "" || folder.prev === null ? "/" : `/wiki/${folder.prev}`;
   return (
     <nav style={{ padding: "1rem 0", position: "sticky", top: 53,
-                  maxHeight: "calc(100vh - 53px)", overflowY: "auto" }}>
-      {/* 상단: < 뒤로(좌) · 전체트리 >(우) — 글자 링크, 구분선은 좌우 끝까지 */}
+                  maxHeight: "calc(100vh - 53px)", overflowY: "auto", overflowX: "hidden" }}>
+      {/* 상단: < 뒤로(좌) · 전체트리 >(우) — 음수 마진 없이 aside 전폭 사용 (횡스크롤 원인 제거) */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
-                    margin: "0 -1rem 0.9rem", padding: "0 1rem 0.7rem",
+                    padding: "0 1rem 0.7rem", marginBottom: "0.9rem",
                     borderBottom: "1px solid var(--line)" }}>
         {backHref !== null ? (
           <Link href={backHref}
@@ -28,10 +28,10 @@ export default function DrillSidebar({ folder, folderPath }: {
       </div>
       {/* 현재 카테고리명 — 크게 */}
       <div style={{ fontWeight: 700, fontSize: "1.15rem", color: "var(--fg)",
-                    marginBottom: "0.7rem" }}>
+                    margin: "0 1rem 0.7rem" }}>
         {folder.name || "study-note"}
       </div>
-      <ul style={{ listStyle: "none" }}>
+      <ul style={{ listStyle: "none", padding: "0 0.6rem" }}>
         {folder.children.map((child) => (
           <li key={child.path} style={{ margin: "0.1rem 0" }}>
             <Link href={`/wiki/${child.path}`}
