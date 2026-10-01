@@ -38,20 +38,29 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
       body = <FolderView node={node} />;   // README 없는 폴더는 목록 폴백
     }
   } else if (node && node.is_subject) {
-    const docsByKind = new Map<string, DocData | null>();
-    await Promise.all(node.docs.map(async (docRef: { doc_kind: string; path: string }) => {
-      docsByKind.set(docRef.doc_kind, await fetchDoc(docRef.path).catch(() => null));
-    }));
-    for (const kind of CHAPTER_KINDS) if (!docsByKind.has(kind)) docsByKind.set(kind, null);
     const isChapter = node.docs.some((doc) => CHAPTER_KINDS.includes(doc.doc_kind));
     const contentDocs = node.docs.filter((doc) => doc.doc_kind !== "readme" && doc.doc_kind !== "index");
-    const single = [...docsByKind.values()].find((doc) => doc != null);
-    if (!isChapter && contentDocs.length <= 1 && single) {
-      singleDoc = { path: single.path, markdown: single.markdown || "" };   // 단일 post 리프 → 리더
-    } else {
-      chatDocPath = single?.path ?? null;   // 요약/첫 문서 기준
+    if (!isChapter && contentDocs.length <= 1) {
+      // 단일 문서 리프(post 1개 또는 README만) → 그 문서만 fetch (리더). post 우선, 없으면 README.
+      const only = contentDocs[0] ?? node.docs.find((doc) => doc.doc_kind === "readme") ?? node.docs[0];
+      if (only) {
+        const doc = await fetchDoc(only.path).catch(() => null);
+        if (doc) singleDoc = { path: doc.path, markdown: doc.markdown || "" };
+      }
+    }
+    if (!singleDoc) {
+      // chapter · 다중 목록 · 빈/폴백 → 필요한 것만 fetch
+      //  다중 목록은 node.docs 참조 + README intro만 쓰므로 content post 내용은 안 가져온다.
+      const docsByKind = new Map<string, DocData | null>();
+      const needed = node.docs.filter((doc) =>
+        CHAPTER_KINDS.includes(doc.doc_kind) || doc.doc_kind === "readme" ||
+        (!isChapter && contentDocs.length <= 1));   // 폴백(빈/단일 실패)만 전량(소량)
+      await Promise.all(needed.map(async (docRef) => {
+        docsByKind.set(docRef.doc_kind, await fetchDoc(docRef.path).catch(() => null));
+      }));
+      for (const kind of CHAPTER_KINDS) if (!docsByKind.has(kind)) docsByKind.set(kind, null);
       const summary = docsByKind.get("summary");
-      if (summary) chatDocPath = summary.path;
+      chatDocPath = summary?.path ?? docsByKind.get("readme")?.path ?? node.docs[0]?.path ?? null;
       body = <SubjectView node={node} docsByKind={docsByKind} extras={otherDocs(node)} />;
     }
   } else {
