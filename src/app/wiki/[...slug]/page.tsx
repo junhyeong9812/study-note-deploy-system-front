@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import WikiView, { FolderView, SubjectView } from "@/features/wiki/ui/WikiView";
 import Markdown from "@/features/wiki/ui/Markdown";
+import PaneReader from "@/features/wiki/ui/PaneReader";
 import { backendGet, newRequestId, type DocData, type TreeData } from "@/shared/api/backend";
 import { CHAPTER_KINDS, findNode, otherDocs } from "@/features/wiki/lib/tree";
 
@@ -25,6 +26,7 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
   const folder = findNode(treeData.tree, folderPath) ?? treeData.tree;
 
   let body;
+  let singleDoc: { path: string; markdown: string } | null = null;   // 단일 문서 → 분할 리더
   if (node && !node.is_subject) {
     // 폴더 콘텐츠 = 그 폴더의 README (사양: 하위 나열은 사이드바 몫)
     const readme = node.docs.find((doc) => doc.path.endsWith("README.md"));
@@ -41,18 +43,31 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
       docsByKind.set(docRef.doc_kind, await fetchDoc(docRef.path).catch(() => null));
     }));
     for (const kind of CHAPTER_KINDS) if (!docsByKind.has(kind)) docsByKind.set(kind, null);
-    chatDocPath = [...docsByKind.values()].find((doc) => doc)?.path ?? null;   // 요약/첫 문서 기준
-    const summary = docsByKind.get("summary");
-    if (summary) chatDocPath = summary.path;
-    body = <SubjectView node={node} docsByKind={docsByKind} extras={otherDocs(node)} />;
+    const isChapter = node.docs.some((doc) => CHAPTER_KINDS.includes(doc.doc_kind));
+    const contentDocs = node.docs.filter((doc) => doc.doc_kind !== "readme" && doc.doc_kind !== "index");
+    const single = [...docsByKind.values()].find((doc) => doc != null);
+    if (!isChapter && contentDocs.length <= 1 && single) {
+      singleDoc = { path: single.path, markdown: single.markdown || "" };   // 단일 post 리프 → 리더
+    } else {
+      chatDocPath = single?.path ?? null;   // 요약/첫 문서 기준
+      const summary = docsByKind.get("summary");
+      if (summary) chatDocPath = summary.path;
+      body = <SubjectView node={node} docsByKind={docsByKind} extras={otherDocs(node)} />;
+    }
   } else {
     try {
       const doc = await fetchDoc(currentPath + ".md");
-      chatDocPath = doc.path;
-      body = <Markdown markdown={doc.markdown || "*빈 문서*"} docPath={doc.path} />;
+      singleDoc = { path: doc.path, markdown: doc.markdown || "" };   // 문서 직접 보기 → 리더
     } catch {
       notFound();
     }
   }
-  return <WikiView treeData={treeData} folder={folder} folderPath={folderPath} body={body} chatDocPath={chatDocPath} />;
+
+  if (singleDoc) {
+    // 단일 문서 보기 = 분할 리더(챗봇은 PaneReader가 소유) → WikiView는 2열(chatDocPath=null)
+    body = <PaneReader initialPath={singleDoc.path} initialMarkdown={singleDoc.markdown} chatEnabled />;
+    chatDocPath = null;
+  }
+  return <WikiView treeData={treeData} folder={folder} folderPath={folderPath} body={body}
+                   chatDocPath={chatDocPath} wide={!!singleDoc} />;
 }
