@@ -95,9 +95,10 @@ export function SubjectView({ node, docsByKind, extras }: {
   );
 }
 
-export default function WikiView({ treeData, folder, folderPath, body, chatDocPath }: {
+export default function WikiView({ treeData, folder, folderPath, body, chatDocPath, wide }: {
   treeData: TreeData; folder: TreeNode; folderPath: string; body: React.ReactNode;
   chatDocPath?: string | null;      // 있으면 우측 채팅 패널 렌더 (이슈 #25)
+  wide?: boolean;                   // 분할 리더 — 본문 폭 캡·패딩 제거(전폭 사용)
 }) {
   const columns = chatDocPath ? "260px minmax(0, 1fr) 340px" : "260px minmax(0, 1fr)";
   return (
@@ -109,8 +110,8 @@ export default function WikiView({ treeData, folder, folderPath, body, chatDocPa
                         minHeight: "calc(100vh - 53px)", background: "var(--bg)" }}>
           <DrillSidebar folder={folder} folderPath={folderPath} />
         </aside>
-        <main style={{ padding: "2rem 2.5rem", minWidth: 0 }}>
-          <div style={{ maxWidth: 860 }}>{body}</div>
+        <main style={{ padding: wide ? 0 : "2rem 2.5rem", minWidth: 0 }}>
+          {wide ? body : <div style={{ maxWidth: 860 }}>{body}</div>}
         </main>
         {chatDocPath && (
           <aside style={{ borderLeft: "1px solid var(--line)", background: "var(--bg)" }}>
