@@ -42,6 +42,27 @@ export function SubjectView({ node, docsByKind, extras }: {
 }) {
   const isChapter = node.docs.some((doc) => CHAPTER_KINDS.includes(doc.doc_kind));
   if (!isChapter) {
+    // 콘텐츠 문서(README·목차 제외) — 폴더 규약을 안 지킨 다중 post 리프도 붕괴 대신 목록으로 노출
+    const contentDocs = node.docs.filter((doc) => doc.doc_kind !== "readme" && doc.doc_kind !== "index");
+    if (contentDocs.length > 1) {
+      const readme = docsByKind.get("readme");
+      return (
+        <div>
+          <h1 style={{ marginBottom: "1rem" }}>{node.name}</h1>
+          {readme?.markdown && <Markdown markdown={readme.markdown} docPath={readme.path} />}
+          <ul style={{ listStyle: "none", display: "grid", gap: "0.5rem", marginTop: "1rem" }}>
+            {contentDocs.map((doc) => (
+              <li key={doc.path}
+                  style={{ border: "1px solid var(--line)", borderRadius: 8, padding: "0.6rem 1rem" }}>
+                <Link href={`/wiki/${doc.path.replace(/\.md$/, "")}`}>
+                  {doc.path.split("/").pop()?.replace(/\.md$/, "")}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
     const single = [...docsByKind.values()].find((doc) => doc != null);
     return (
       <div>
