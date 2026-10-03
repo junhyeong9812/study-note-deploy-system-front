@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SearchBar from "@/shared/ui/SearchBar";
+import ThemeToggle from "@/shared/ui/ThemeToggle";
 
 export default function Header() {
   return (
@@ -10,6 +11,7 @@ export default function Header() {
     }}>
       <Link href="/" style={{ fontWeight: 700, color: "var(--fg)" }}>study-note</Link>
       <SearchBar />
+      <ThemeToggle />
     </header>
   );
 }

@@ -1,0 +1,7 @@
+/* 1단계 신규 컴포넌트 — CSS Module + 토큰 (가정①: SSR 적용 실증) */
+.toggle {
+  margin-left: auto; white-space: nowrap; cursor: pointer;
+  border: 1px solid var(--line); border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-3);
+  background: var(--bg); color: var(--fg); font-size: var(--text-sm);
+}

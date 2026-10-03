@@ -1,10 +1,36 @@
+/* ── 디자인 토큰 (design.md §4) ──────────────────────────────
+   테마: data-theme 없음 = 자동(OS), "light"/"dark" = 수동 고정 */
 :root {
+  color-scheme: light;
+  /* 색 */
   --bg: #ffffff; --fg: #1a1a1a; --muted: #6b7280; --line: #e5e7eb;
   --accent: #2563eb; --accent-bg: #eff6ff; --code-bg: #f6f8fa;
+  /* 여백 */
+  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem;
+  --space-4: 1rem; --space-6: 1.5rem; --space-8: 2rem;
+  /* 글자 */
+  --text-xs: 0.78rem; --text-sm: 0.875rem; --text-md: 1rem; --text-lg: 1.25rem; --text-xl: 1.6rem;
+  --reading-width: 72ch;
+  /* 모양 */
+  --radius-sm: 6px; --radius-md: 8px; --radius-pill: 20px;
+  /* 레이아웃 (브레이크포인트: mobile <720 ≤ tablet <1200 ≤ desktop — 미디어쿼리 상수) */
+  --header-h: 53px; --tree-w: 260px; --chat-w: 340px;
+  /* 레이어 */
+  --z-header: 10; --z-overlay: 40; --z-drawer: 50;
 }
+/* 다크 팔레트 ① 자동(OS 다크) — ②와 값 동기화 필수 */
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #111418; --fg: #e5e7eb; --muted: #9ca3af; --line: #2d333b;
-          --accent: #60a5fa; --accent-bg: #1a2536; --code-bg: #1c2128; }
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #111418; --fg: #e5e7eb; --muted: #9ca3af; --line: #2d333b;
+    --accent: #60a5fa; --accent-bg: #1a2536; --code-bg: #1c2128;
+  }
+}
+/* 다크 팔레트 ② 수동 다크 — ①과 값 동기화 필수 */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #111418; --fg: #e5e7eb; --muted: #9ca3af; --line: #2d333b;
+  --accent: #60a5fa; --accent-bg: #1a2536; --code-bg: #1c2128;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: var(--bg); color: var(--fg);
