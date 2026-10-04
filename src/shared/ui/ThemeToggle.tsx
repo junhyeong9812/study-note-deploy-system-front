@@ -28,7 +28,7 @@ export default function ThemeToggle() {
   return (
     <button onClick={change} className={styles.toggle}
             aria-label={`테마 ${NAME[theme]}, 눌러서 변경`} title="테마 변경 (자동 → 라이트 → 다크)">
-      <span aria-hidden="true">{ICON[theme]}</span> {NAME[theme]}
+      <span aria-hidden="true">{ICON[theme]}</span><span className={styles.label}> {NAME[theme]}</span>
     </button>
   );
 }

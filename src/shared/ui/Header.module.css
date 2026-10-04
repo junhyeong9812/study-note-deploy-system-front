@@ -1,0 +1,14 @@
+/* 헤더 — 높이 고정(--header-h): 좁은 화면 드로어가 이 높이 아래에서 시작하므로 정렬 기준.
+   3단계(모바일 햄버거)에 필요한 최소 이전 — 헤더 컨테이너만. (design.md §8, log 기록) */
+.header {
+  display: flex; align-items: center; gap: var(--space-6);
+  height: var(--header-h); padding: 0 var(--space-6);
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: var(--z-header);
+  background: var(--bg);
+}
+.brand { font-weight: 700; color: var(--fg); white-space: nowrap; }
+
+@media (max-width: 719px) {
+  .header { gap: var(--space-2); padding: 0 var(--space-3); }
+}

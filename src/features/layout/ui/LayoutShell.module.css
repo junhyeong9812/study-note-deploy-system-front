@@ -20,3 +20,38 @@
   grid-column: 3; grid-row: 1; min-width: 0;
   border-left: 1px solid var(--line); background: var(--bg);
 }
+
+.tree:focus, .chat:focus { outline: none; }   /* 드로어 포커스 이동용 tabIndex=-1 — 테두리 표시 안 함 */
+.backdrop { display: none; }
+
+/* ── 좁은 화면(태블릿·모바일 <1200): 트리·챗 = 겹치는 드로어 (한 번에 하나) ─────────────
+   주의: .tree/.chat에 display를 지정하지 않는다 — hidden 속성(UA display:none)이 열림/닫힘을 담당.
+   서버·첫 렌더는 데스크톱 상태라도 data-drawer가 none이면 드로어를 숨겨 첫 화면 튀어나옴을 막는다. */
+@media (max-width: 1199px) {
+  .body { grid-template-columns: minmax(0, 1fr); }
+  .main, .mainWide { grid-column: 1; }
+  .main { padding: var(--space-6) var(--space-6); }
+  .tree, .chat {
+    position: fixed; top: var(--header-h); bottom: 0; z-index: var(--z-drawer);
+    overflow-y: auto; box-shadow: 0 4px 24px rgb(0 0 0 / 0.18);
+  }
+  .tree { left: 0; width: min(var(--tree-w), 85vw); }
+  .chat { right: 0; width: min(var(--chat-w), 92vw); }
+  .shell:not([data-drawer="tree"]) .tree,
+  .shell:not([data-drawer="chat"]) .chat { visibility: hidden; pointer-events: none; }
+  .backdrop {
+    display: block; position: fixed; inset: var(--header-h) 0 0 0;
+    z-index: var(--z-overlay); background: rgb(0 0 0 / 0.35);
+  }
+}
+
+/* ── 모바일 <720: 트리 = 전체 폭 드로어, 챗 = 하단 시트 ──────────────────────────────── */
+@media (max-width: 719px) {
+  .main { padding: var(--space-4) var(--space-4); }
+  .tree { width: 100vw; border-right: none; }
+  .chat {
+    top: auto; left: 0; right: 0; width: auto; height: 70vh; height: 70dvh;   /* dvh: iOS 툴바·키보드 반영, vh는 폴백 */
+    border-left: none; border-top: 1px solid var(--line);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+  }
+}

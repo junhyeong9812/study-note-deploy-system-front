@@ -48,9 +48,13 @@ export default function PaneReader({ initialPath, initialMarkdown }: {
 
   const close = useCallback(() => setStack((current) => closeTop(current)), []);
 
-  // ESC = 오른쪽(top) pane 닫기
+  // ESC = 오른쪽(top) pane 닫기 — 좁은 화면 드로어가 열려 있으면 드로어가 우선(LayoutShell이 닫음)
+  const drawerOpenRef = useRef(false);
+  useEffect(() => { drawerOpenRef.current = layout?.drawerOpen ?? false; });
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") close(); };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !drawerOpenRef.current) close();
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [close]);

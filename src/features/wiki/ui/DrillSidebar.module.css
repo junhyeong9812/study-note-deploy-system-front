@@ -1,0 +1,11 @@
+/* 트리 nav — 데스크톱은 헤더 아래 sticky, 좁은 화면 드로어에선 드로어가 스크롤하므로 sticky 해제.
+   3단계 드로어에 필요한 최소 이전(nav 컨테이너만) — 내부 항목 스타일은 5단계. */
+.nav {
+  padding: var(--space-4) 0;
+  position: sticky; top: var(--header-h);
+  max-height: calc(100vh - var(--header-h));
+  overflow-y: auto; overflow-x: hidden;
+}
+@media (max-width: 1199px) {
+  .nav { position: static; max-height: none; }
+}
