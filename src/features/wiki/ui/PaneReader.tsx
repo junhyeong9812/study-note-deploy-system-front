@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ClientMarkdown from "@/features/wiki/ui/ClientMarkdown";
-import ChatPanel from "@/features/chat/ui/ChatPanel";
+import { useLayout } from "@/features/layout/ui/LayoutContext";
 import { openLink, closeTop, visiblePanes } from "@/features/wiki/lib/paneStack";
 
 type DocState = { markdown: string; loading: boolean; error?: string };
@@ -9,16 +9,15 @@ type DocState = { markdown: string; loading: boolean; error?: string };
 /** 스택 기반 2-pane 리더 — 단일 문서 보기에서 내부 링크를 옆 pane에 연다.
  * 초기 pane(A)는 SSR 콘텐츠 재사용, 이후 pane은 /api/doc 클라 fetch. 스택은 클라 상태(URL 미동기화).
  * 좁은 폭(모바일)에서는 top pane 하나만 표시(분할 폴백). */
-export default function PaneReader({ initialPath, initialMarkdown, chatEnabled }: {
+export default function PaneReader({ initialPath, initialMarkdown }: {
   initialPath: string;
   initialMarkdown: string;
-  chatEnabled: boolean;
 }) {
+  const layout = useLayout();
   const [stack, setStack] = useState<string[]>([initialPath]);
   const [docs, setDocs] = useState<Record<string, DocState>>({
     [initialPath]: { markdown: initialMarkdown, loading: false },
   });
-  const [showChat, setShowChat] = useState(false);
   const [narrow, setNarrow] = useState(false);
   const requested = useRef<Set<string>>(new Set([initialPath]));   // 요청/로드된 path (중복 fetch 차단)
 
@@ -67,14 +66,16 @@ export default function PaneReader({ initialPath, initialMarkdown, chatEnabled }
 
   const allPanes = visiblePanes(stack);
   const panes = narrow ? allPanes.slice(-1) : allPanes;   // 좁으면 top 하나만 (F: 모바일 폴백)
-  const split = panes.length > 1;
 
-  // 분할 활성 시 챗봇 숨김, 단일 복귀 시 다시 (spec② 기본 흐름)
-  useEffect(() => { setShowChat(!split); }, [split]);
-  const chatVisible = chatEnabled && showChat;
+  // 챗은 LayoutShell 소유 — 오른쪽(top) pane 문서와 분할 여부만 보고 (design.md §6)
+  const topDoc = panes[panes.length - 1] ?? null;
+  const reportPane = layout?.reportPane;
+  const stackSplit = stack.length > 1;   // 분할 = 스택 기준(좁은 화면에서 1개만 보여도 분할)
+  useEffect(() => { reportPane?.(topDoc, stackSplit); }, [reportPane, topDoc, stackSplit]);
+  useEffect(() => () => { reportPane?.(null, false); }, [reportPane]);
 
   return (
-    <div style={{ display: "flex", minHeight: "calc(100vh - 53px)" }}>
+    <div style={{ display: "flex", minHeight: "calc(100vh - var(--header-h))" }}>
       {panes.map((path, index) => {
         const doc = docs[path];
         const isTop = index === panes.length - 1;
@@ -91,7 +92,7 @@ export default function PaneReader({ initialPath, initialMarkdown, chatEnabled }
                              overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {path.replace(/\.md$/, "")}
               </span>
-              {split && isTop && (
+              {stackSplit && isTop && (   /* 스택 기준 — 좁은 화면(1개 표시)에서도 돌아갈 수 있게 */
                 <button onClick={close} aria-label="닫기 (ESC)" title="닫기 (ESC)"
                         style={{ border: "1px solid var(--line)", borderRadius: 6,
                                  padding: "0.1rem 0.5rem", cursor: "pointer", background: "var(--bg)" }}>
@@ -118,21 +119,6 @@ export default function PaneReader({ initialPath, initialMarkdown, chatEnabled }
         );
       })}
 
-      {chatVisible && (
-        <aside style={{ width: 340, flexShrink: 0, borderLeft: "1px solid var(--line)", background: "var(--bg)" }}>
-          <ChatPanel docPath={panes[panes.length - 1]} />
-        </aside>
-      )}
-
-      {chatEnabled && (
-        <button onClick={() => setShowChat((value) => !value)}
-                title={chatVisible ? "챗봇 닫기" : "챗봇 열기"}
-                style={{ position: "fixed", right: "1rem", top: "4rem", zIndex: 10,
-                         border: "1px solid var(--line)", borderRadius: 20, padding: "0.4rem 0.8rem",
-                         cursor: "pointer", background: "var(--bg)" }}>
-          {chatVisible ? "💬 닫기" : "💬 질문"}
-        </button>
-      )}
     </div>
   );
 }

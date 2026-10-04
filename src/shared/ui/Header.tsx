@@ -1,6 +1,7 @@
 import Link from "next/link";
 import SearchBar from "@/shared/ui/SearchBar";
 import ThemeToggle from "@/shared/ui/ThemeToggle";
+import { TreeToggle, ChatToggle } from "@/features/layout/ui/LayoutToggles";
 
 export default function Header() {
   return (
@@ -9,9 +10,11 @@ export default function Header() {
       borderBottom: "1px solid var(--line)", position: "sticky", top: 0,
       background: "var(--bg)", zIndex: 10,
     }}>
+      <TreeToggle />
       <Link href="/" style={{ fontWeight: 700, color: "var(--fg)" }}>study-note</Link>
       <SearchBar />
       <ThemeToggle />
+      <ChatToggle />
     </header>
   );
 }

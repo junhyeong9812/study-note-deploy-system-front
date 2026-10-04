@@ -1,0 +1,22 @@
+/* 레이아웃 셸 — 열림/닫힘은 data 속성 → 열 폭 변수 (3단계 미디어쿼리가 이 위에 얹힘) */
+.shell { --tree-col: 0px; --chat-col: 0px; }
+.shell[data-tree="open"] { --tree-col: var(--tree-w); }
+.shell[data-chat="open"] { --chat-col: var(--chat-w); }
+
+.body {
+  display: grid;
+  grid-template-columns: var(--tree-col) minmax(0, 1fr) var(--chat-col);
+}
+/* 열 위치를 명시 — 닫힌 패널(hidden)이 빠져도 본문이 1열로 밀리지 않게 */
+.tree {
+  grid-column: 1; grid-row: 1; min-width: 0;
+  border-right: 1px solid var(--line); background: var(--bg);
+  min-height: calc(100vh - var(--header-h));
+}
+.main { grid-column: 2; grid-row: 1; min-width: 0; padding: var(--space-8) 2.5rem; }
+.mainWide { grid-column: 2; grid-row: 1; min-width: 0; }
+.reading { max-width: 860px; }      /* 4단계에서 --reading-width로 */
+.chat {
+  grid-column: 3; grid-row: 1; min-width: 0;
+  border-left: 1px solid var(--line); background: var(--bg);
+}

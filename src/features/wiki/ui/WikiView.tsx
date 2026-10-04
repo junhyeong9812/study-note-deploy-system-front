@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Header from "@/shared/ui/Header";
 import Markdown from "@/features/wiki/ui/Markdown";
-import ChatPanel from "@/features/chat/ui/ChatPanel";
+import LayoutShell from "@/features/layout/ui/LayoutShell";
 import DrillSidebar from "@/features/wiki/ui/DrillSidebar";
 import Tabs from "@/features/wiki/ui/Tabs";
 import type { DocData, TreeData, TreeNode } from "@/shared/api/backend";
@@ -95,31 +95,17 @@ export function SubjectView({ node, docsByKind, extras }: {
   );
 }
 
-export default function WikiView({ treeData, folder, folderPath, body, chatDocPath, wide }: {
-  treeData: TreeData; folder: TreeNode; folderPath: string; body: React.ReactNode;
-  chatDocPath?: string | null;      // 있으면 우측 채팅 패널 렌더 (이슈 #25)
+export default function WikiView({ folder, folderPath, body, chatDocPath, wide }: {
+  treeData: TreeData;               // 호출부 호환용(레이아웃은 folder만 사용)
+  folder: TreeNode; folderPath: string; body: React.ReactNode;
+  chatDocPath?: string | null;      // 페이지 기본 챗 문서 (이슈 #25) — 렌더·토글은 LayoutShell 소유
   wide?: boolean;                   // 분할 리더 — 본문 폭 캡·패딩 제거(전폭 사용)
 }) {
-  const columns = chatDocPath ? "260px minmax(0, 1fr) 340px" : "260px minmax(0, 1fr)";
   return (
-    <div>
-      <Header />
-      {/* 전체 폭 — 좌: 드릴다운, 우: 채팅(문서 페이지에서만) */}
-      <div style={{ display: "grid", gridTemplateColumns: columns }}>
-        <aside style={{ borderRight: "1px solid var(--line)",
-                        minHeight: "calc(100vh - 53px)", background: "var(--bg)" }}>
-          <DrillSidebar folder={folder} folderPath={folderPath} />
-        </aside>
-        <main style={{ padding: wide ? 0 : "2rem 2.5rem", minWidth: 0 }}>
-          {wide ? body : <div style={{ maxWidth: 860 }}>{body}</div>}
-        </main>
-        {chatDocPath && (
-          <aside style={{ borderLeft: "1px solid var(--line)", background: "var(--bg)" }}>
-            <ChatPanel docPath={chatDocPath} />
-          </aside>
-        )}
-      </div>
-    </div>
+    <LayoutShell header={<Header />} sidebar={<DrillSidebar folder={folder} folderPath={folderPath} />}
+                 chatDocPath={chatDocPath} wide={wide}>
+      {body}
+    </LayoutShell>
   );
 }
 export { FolderView };

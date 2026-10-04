@@ -73,9 +73,9 @@ export default async function WikiPage({ params }: { params: Promise<{ slug: str
   }
 
   if (singleDoc) {
-    // 단일 문서 보기 = 분할 리더(챗봇은 PaneReader가 소유) → WikiView는 2열(chatDocPath=null)
-    body = <PaneReader initialPath={singleDoc.path} initialMarkdown={singleDoc.markdown} chatEnabled />;
-    chatDocPath = null;
+    // 단일 문서 보기 = 분할 리더. 챗은 LayoutShell 소유 — 기본 문서는 이 문서, 분할 시 오른쪽 pane을 따라감
+    body = <PaneReader key={singleDoc.path} initialPath={singleDoc.path} initialMarkdown={singleDoc.markdown} />;
+    chatDocPath = singleDoc.path;
   }
   return <WikiView treeData={treeData} folder={folder} folderPath={folderPath} body={body}
                    chatDocPath={chatDocPath} wide={!!singleDoc} />;
