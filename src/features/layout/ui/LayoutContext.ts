@@ -5,6 +5,7 @@ export type LayoutApi = {
   treeOpen: boolean;
   chatOpen: boolean;
   chatAvailable: boolean;          // 챗을 붙일 문서가 있는 페이지인가
+  drawerOpen: boolean;             // 좁은 화면에서 드로어가 열려 있나(ESC는 드로어 우선)
   toggleTree: () => void;
   toggleChat: () => void;
   /** 분할 리더가 오른쪽(top) pane 문서와 분할 여부를 보고 — 챗이 그 문서를 따라간다 */

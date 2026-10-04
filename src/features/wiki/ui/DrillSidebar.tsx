@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { TreeNode } from "@/shared/api/backend";
+import styles from "./DrillSidebar.module.css";
 
 /** 드릴다운 사이드바 — 현재 폴더의 하위만 나열. 맨 위에 뒤로가기 + 전체 트리 모달. (이슈 #17) */
 export default function DrillSidebar({ folder, folderPath }: {
@@ -11,8 +12,7 @@ export default function DrillSidebar({ folder, folderPath }: {
     ? null
     : folder.prev === "" || folder.prev === null ? "/" : `/wiki/${folder.prev}`;
   return (
-    <nav style={{ padding: "1rem 0", position: "sticky", top: 53,
-                  maxHeight: "calc(100vh - 53px)", overflowY: "auto", overflowX: "hidden" }}>
+    <nav className={styles.nav}>
       {/* 상단: < 뒤로(좌) · 전체트리 >(우) — 음수 마진 없이 aside 전폭 사용 (횡스크롤 원인 제거) */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center",
                     padding: "0 1rem 0.7rem", marginBottom: "0.9rem",

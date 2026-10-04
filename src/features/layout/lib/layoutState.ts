@@ -46,3 +46,14 @@ export function shortcutAction(event: KeyLike, target: TargetLike): "tree" | "ch
   if (event.key === "/") return "chat";
   return null;
 }
+
+/** 좁은 화면(태블릿·모바일) 드로어 — 한 번에 하나만. 기억하지 않음(매번 닫힘 시작) */
+export type Drawer = "none" | "tree" | "chat";
+
+/** 같은 드로어 버튼 = 닫기, 다른 버튼 = 그 드로어로 전환 */
+export function nextDrawer(current: Drawer, pressed: "tree" | "chat"): Drawer {
+  return current === pressed ? "none" : pressed;
+}
+
+/** 좁은 화면 판정 기준 폭 — 이 미만이면 드로어 모드 (CSS 미디어쿼리 1199px과 짝) */
+export const COMPACT_MAX = 1199;

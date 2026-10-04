@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  parseStoredOpen, INITIAL_CHAT, isChatOpen, toggleChatState, withSplit, shortcutAction, shouldPersistChat,
+  parseStoredOpen, INITIAL_CHAT, isChatOpen, toggleChatState, withSplit, shortcutAction, shouldPersistChat, nextDrawer,
 } from "./layoutState";
 
 describe("layoutState", () => {
@@ -52,5 +52,12 @@ describe("layoutState", () => {
     expect(shortcutAction({ key: "/", ctrlKey: false }, { tagName: "BODY" })).toBe(null);
     expect(shortcutAction({ key: "/", ctrlKey: true, altKey: true }, { tagName: "BODY" })).toBe(null);
     expect(shortcutAction({ key: "a", ctrlKey: true }, { tagName: "BODY" })).toBe(null);
+  });
+
+  it("드로어 — 같은 버튼은 닫기, 다른 버튼은 전환, 닫힘에서 열기", () => {
+    expect(nextDrawer("none", "tree")).toBe("tree");
+    expect(nextDrawer("tree", "tree")).toBe("none");
+    expect(nextDrawer("tree", "chat")).toBe("chat");
+    expect(nextDrawer("chat", "chat")).toBe("none");
   });
 });

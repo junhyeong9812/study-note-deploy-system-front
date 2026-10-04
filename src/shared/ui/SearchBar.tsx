@@ -35,7 +35,8 @@ export default function SearchBar() {
   };
 
   return (
-    <div style={{ flex: 1, maxWidth: 520, position: "relative" }}>
+    <div style={{ flex: 1, minWidth: 0, maxWidth: 520, position: "relative" }}>
+      {/* minWidth 0: 좁은 헤더에서 검색창이 줄어들게 (flex 기본 min-width:auto 해제) */}
       <form onSubmit={(event) => {
         event.preventDefault();
         if (active >= 0 && items[active]) goItem(items[active]);
