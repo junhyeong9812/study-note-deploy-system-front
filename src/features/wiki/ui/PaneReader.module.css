@@ -1,0 +1,27 @@
+/* 분할 리더 — 데스크톱·태블릿은 A|B 2열, 모바일(<720)은 top pane만 (CSS로 왼쪽 숨김) */
+.reader { display: flex; min-height: calc(100vh - var(--header-h)); }
+.pane { flex: 1; min-width: 0; padding: var(--space-6) var(--space-8); overflow-y: auto; }
+.pane + .pane { border-left: 1px solid var(--line); }
+.head {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: var(--space-2); margin-bottom: var(--space-3);
+}
+.path {
+  font-size: var(--text-xs); color: var(--muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.close {
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 0.1rem var(--space-2); cursor: pointer; background: var(--bg); color: var(--fg);
+}
+.body { max-width: var(--reading-width); }
+.status { color: var(--muted); }
+
+@media (max-width: 1199px) {
+  .pane { padding: var(--space-6); }
+}
+@media (max-width: 719px) {
+  .back { display: none; }                 /* 왼쪽(이전) pane 숨김 — 스택은 유지, ✕/ESC로 복귀 */
+  .pane + .pane { border-left: none; }
+  .pane { padding: var(--space-4); }
+}
