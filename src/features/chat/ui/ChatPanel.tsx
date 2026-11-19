@@ -1,5 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import {
+  applyStreamCut, applyStreamEvent, createSseParser, initialAnswerState, type AnswerState,
+} from "../lib/chatStream";
 
 interface ChatMessage { role: string; content: string; source?: "local" | "claude" }
 
@@ -10,12 +13,23 @@ export default function ChatPanel({ docPath }: { docPath: string }) {
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const streamAbortRef = useRef<AbortController | null>(null);
+
   useEffect(() => {                                    // 페이지(doc)별 이력 로드
+    const historyAbort = new AbortController();
     setMessages([]);
-    fetch(`/api/chat/history?doc_path=${encodeURIComponent(docPath)}`)
+    fetch(`/api/chat/history?doc_path=${encodeURIComponent(docPath)}`, { signal: historyAbort.signal })
       .then((response) => response.json())
       .then((body) => { if (body.success) setMessages(body.data.messages); })
       .catch(() => {});
+    return () => {
+      // 문서를 바꾸거나 패널을 닫으면 진행 중 요청을 끊는다 —
+      // 대기 자리를 붙잡지 않고, 늦게 온 응답이 다른 문서 화면을 덮어쓰지 않게
+      historyAbort.abort();
+      streamAbortRef.current?.abort();
+      streamAbortRef.current = null;
+      setBusy(false);
+    };
   }, [docPath]);
 
   useEffect(() => {
@@ -28,35 +42,44 @@ export default function ChatPanel({ docPath }: { docPath: string }) {
     setInput(""); setBusy(true);
     setMessages((previous) => [...previous,
       { role: "user", content: question }, { role: "assistant", content: "" }]);
+    const streamAbort = new AbortController();
+    streamAbortRef.current = streamAbort;
+    let answer = initialAnswerState;
+    const showAnswer = (next: AnswerState) => {
+      answer = next;
+      if (streamAbort.signal.aborted) return;     // 떠난 문서의 응답은 화면에 쓰지 않는다
+      setMessages((previous) => {
+        const updated = [...previous];
+        updated[updated.length - 1] = { ...updated[updated.length - 1], content: next.content };
+        return updated;
+      });
+    };
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
         body: JSON.stringify({ doc_path: docPath, question }),
+        signal: streamAbort.signal,
       });
       if (!response.ok || !response.body) throw new Error(String(response.status));
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      while (true) {
+      const parse = createSseParser();
+      while (!answer.finished) {
         const { done, value } = await reader.read();
         if (done) break;
-        const token = decoder.decode(value, { stream: true });
-        setMessages((previous) => {
-          const next = [...previous];
-          next[next.length - 1] = { ...next[next.length - 1],
-            content: next[next.length - 1].content + token };
-          return next;
-        });
+        for (const event of parse(decoder.decode(value, { stream: true }))) {
+          showAnswer(applyStreamEvent(answer, event));
+        }
       }
+      showAnswer(applyStreamCut(answer));           // 끝 표시 없이 닫혔으면 실패로 끝낸다
     } catch {
-      setMessages((previous) => {
-        const next = [...previous];
-        next[next.length - 1] = { role: "assistant",
-          content: "응답에 실패했습니다. 잠시 후 다시 시도해주세요." };
-        return next;
-      });
+      showAnswer(applyStreamCut(answer));
     } finally {
-      setBusy(false);
+      if (streamAbortRef.current === streamAbort) {
+        streamAbortRef.current = null;
+        setBusy(false);
+      }
     }
   };
 
