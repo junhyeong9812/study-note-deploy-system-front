@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { createSseParser, errorNotice, queuedNotice } from "../lib/chatStream";
 
 interface ChatMessage { role: string; content: string; source?: "local" | "claude" }
 
@@ -28,33 +29,49 @@ export default function ChatPanel({ docPath }: { docPath: string }) {
     setInput(""); setBusy(true);
     setMessages((previous) => [...previous,
       { role: "user", content: question }, { role: "assistant", content: "" }]);
+    const showAnswer = (update: (current: string) => string) =>
+      setMessages((previous) => {
+        const next = [...previous];
+        const last = next[next.length - 1];
+        next[next.length - 1] = { ...last, content: update(last.content) };
+        return next;
+      });
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
         body: JSON.stringify({ doc_path: docPath, question }),
       });
       if (!response.ok || !response.body) throw new Error(String(response.status));
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
-      while (true) {
+      const parse = createSseParser();
+      let answering = false;                      // 첫 토큰 전까지는 상태 문구(대기 등)를 보여준다
+      let finished = false;
+      while (!finished) {
         const { done, value } = await reader.read();
         if (done) break;
-        const token = decoder.decode(value, { stream: true });
-        setMessages((previous) => {
-          const next = [...previous];
-          next[next.length - 1] = { ...next[next.length - 1],
-            content: next[next.length - 1].content + token };
-          return next;
-        });
+        for (const event of parse(decoder.decode(value, { stream: true }))) {
+          if (event.type === "queued") {
+            showAnswer(() => queuedNotice(event.position));
+          } else if (event.type === "start") {
+            showAnswer(() => "");
+          } else if (event.type === "token") {
+            const text = event.text;
+            showAnswer((current) => (answering ? current : "") + text);
+            answering = true;
+          } else if (event.type === "error") {
+            const notice = errorNotice(event.code);
+            showAnswer((current) => (answering ? `${current}\n\n${notice}` : notice));
+            finished = true;
+          } else {
+            finished = true;
+          }
+        }
       }
+      if (!finished) throw new Error("stream ended without done");   // 끝 표시 없이 끊김
     } catch {
-      setMessages((previous) => {
-        const next = [...previous];
-        next[next.length - 1] = { role: "assistant",
-          content: "응답에 실패했습니다. 잠시 후 다시 시도해주세요." };
-        return next;
-      });
+      showAnswer(() => errorNotice("internal"));
     } finally {
       setBusy(false);
     }
