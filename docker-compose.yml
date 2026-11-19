@@ -1,6 +1,7 @@
 services:
   front:
     build: .
+    image: front-app:${IMAGE_TAG:-local}   # ci-cd: CI 가 커밋 태그로 빌드, CD 가 그 태그로 교체
     container_name: front-app
     ports:
       - "11000:11000"        # 오라클 www.junproject.xyz conf가 이 포트로 프록시 (재활용)
