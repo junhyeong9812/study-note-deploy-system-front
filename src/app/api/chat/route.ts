@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
   });
   const headers = new Headers({
     "Content-Type": upstream.headers.get("content-type") ?? "text/plain; charset=utf-8",
-    "Cache-Control": "no-store",
+    "Cache-Control": "no-store, no-transform",   // no-transform — 중간에서 압축하며 모아두지 않게
     "X-Accel-Buffering": "no",                 // 엣지 nginx가 이벤트를 모아두지 않게
   });
   const setCookie = upstream.headers.get("set-cookie");

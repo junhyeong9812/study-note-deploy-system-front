@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { createSseParser, errorNotice, queuedNotice } from "../lib/chatStream";
+import {
+  applyStreamCut, applyStreamEvent, createSseParser, initialAnswerState, type AnswerState,
+} from "../lib/chatStream";
 
 interface ChatMessage { role: string; content: string; source?: "local" | "claude" }
 
@@ -11,12 +13,23 @@ export default function ChatPanel({ docPath }: { docPath: string }) {
   const [busy, setBusy] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const streamAbortRef = useRef<AbortController | null>(null);
+
   useEffect(() => {                                    // 페이지(doc)별 이력 로드
+    const historyAbort = new AbortController();
     setMessages([]);
-    fetch(`/api/chat/history?doc_path=${encodeURIComponent(docPath)}`)
+    fetch(`/api/chat/history?doc_path=${encodeURIComponent(docPath)}`, { signal: historyAbort.signal })
       .then((response) => response.json())
       .then((body) => { if (body.success) setMessages(body.data.messages); })
       .catch(() => {});
+    return () => {
+      // 문서를 바꾸거나 패널을 닫으면 진행 중 요청을 끊는다 —
+      // 대기 자리를 붙잡지 않고, 늦게 온 응답이 다른 문서 화면을 덮어쓰지 않게
+      historyAbort.abort();
+      streamAbortRef.current?.abort();
+      streamAbortRef.current = null;
+      setBusy(false);
+    };
   }, [docPath]);
 
   useEffect(() => {
@@ -29,51 +42,44 @@ export default function ChatPanel({ docPath }: { docPath: string }) {
     setInput(""); setBusy(true);
     setMessages((previous) => [...previous,
       { role: "user", content: question }, { role: "assistant", content: "" }]);
-    const showAnswer = (update: (current: string) => string) =>
+    const streamAbort = new AbortController();
+    streamAbortRef.current = streamAbort;
+    let answer = initialAnswerState;
+    const showAnswer = (next: AnswerState) => {
+      answer = next;
+      if (streamAbort.signal.aborted) return;     // 떠난 문서의 응답은 화면에 쓰지 않는다
       setMessages((previous) => {
-        const next = [...previous];
-        const last = next[next.length - 1];
-        next[next.length - 1] = { ...last, content: update(last.content) };
-        return next;
+        const updated = [...previous];
+        updated[updated.length - 1] = { ...updated[updated.length - 1], content: next.content };
+        return updated;
       });
+    };
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
         body: JSON.stringify({ doc_path: docPath, question }),
+        signal: streamAbort.signal,
       });
       if (!response.ok || !response.body) throw new Error(String(response.status));
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       const parse = createSseParser();
-      let answering = false;                      // 첫 토큰 전까지는 상태 문구(대기 등)를 보여준다
-      let finished = false;
-      while (!finished) {
+      while (!answer.finished) {
         const { done, value } = await reader.read();
         if (done) break;
         for (const event of parse(decoder.decode(value, { stream: true }))) {
-          if (event.type === "queued") {
-            showAnswer(() => queuedNotice(event.position));
-          } else if (event.type === "start") {
-            showAnswer(() => "");
-          } else if (event.type === "token") {
-            const text = event.text;
-            showAnswer((current) => (answering ? current : "") + text);
-            answering = true;
-          } else if (event.type === "error") {
-            const notice = errorNotice(event.code);
-            showAnswer((current) => (answering ? `${current}\n\n${notice}` : notice));
-            finished = true;
-          } else {
-            finished = true;
-          }
+          showAnswer(applyStreamEvent(answer, event));
         }
       }
-      if (!finished) throw new Error("stream ended without done");   // 끝 표시 없이 끊김
+      showAnswer(applyStreamCut(answer));           // 끝 표시 없이 닫혔으면 실패로 끝낸다
     } catch {
-      showAnswer(() => errorNotice("internal"));
+      showAnswer(applyStreamCut(answer));
     } finally {
-      setBusy(false);
+      if (streamAbortRef.current === streamAbort) {
+        streamAbortRef.current = null;
+        setBusy(false);
+      }
     }
   };
 

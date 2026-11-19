@@ -24,7 +24,7 @@ function toEvent(name: string, data: string): ChatStreamEvent | null {
 export function createSseParser() {
   let buffer = "";
   return function feed(chunk: string): ChatStreamEvent[] {
-    buffer += chunk.replace(/\r\n/g, "\n");
+    buffer = (buffer + chunk).replace(/\r\n/g, "\n");   // 이어 붙인 뒤 정규화 — \r 과 \n 이 조각 경계에서 갈려도 된다
     const events: ChatStreamEvent[] = [];
     let boundary = buffer.indexOf("\n\n");
     while (boundary !== -1) {
@@ -44,9 +44,9 @@ export function createSseParser() {
   };
 }
 
-/** 대기 문구 — position은 줄에서의 순번(1 = 다음 차례) */
+/** 대기 문구 — position은 llm이 알려준 대기 순번(1부터) */
 export function queuedNotice(position: number): string {
-  return position <= 1 ? "대기 중 (다음 차례예요)" : `대기 중 (앞에 ${position - 1}명)`;
+  return `대기 중 (앞에 ${position}명)`;
 }
 
 /** 오류 문구 — 줄이 밀린 것과 서버가 꺼진 것을 구별한다 */
@@ -60,4 +60,37 @@ export function errorNotice(code: string): string {
     default:
       return "응답 생성에 실패했습니다. 잠시 후 다시 시도해주세요.";
   }
+}
+
+/** 답변 말풍선의 상태 — 이벤트 하나를 받을 때마다 다음 상태로 넘어간다 */
+export interface AnswerState {
+  content: string;       // 말풍선에 보이는 글 (대기·오류 문구 또는 답변)
+  answering: boolean;    // 답변 글자가 한 번이라도 도착했나 — 그 전의 content는 상태 문구다
+  finished: boolean;     // done 또는 error로 끝났나
+}
+
+export const initialAnswerState: AnswerState = { content: "", answering: false, finished: false };
+
+export function applyStreamEvent(state: AnswerState, event: ChatStreamEvent): AnswerState {
+  if (state.finished) return state;
+  switch (event.type) {
+    case "queued":
+      return state.answering ? state : { ...state, content: queuedNotice(event.position) };
+    case "start":
+      return state.answering ? state : { ...state, content: "" };
+    case "token":
+      return { ...state, answering: true, content: (state.answering ? state.content : "") + event.text };
+    case "error": {
+      const notice = errorNotice(event.code);
+      // 답변이 나오다 끊겼으면 받은 글은 두고 아래에 알린다
+      return { ...state, finished: true, content: state.answering ? `${state.content}\n\n${notice}` : notice };
+    }
+    case "done":
+      return { ...state, finished: true };
+  }
+}
+
+/** 끝 표시(done·error) 없이 스트림이 닫혔을 때 */
+export function applyStreamCut(state: AnswerState): AnswerState {
+  return state.finished ? state : applyStreamEvent(state, { type: "error", code: "internal" });
 }
