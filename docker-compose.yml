@@ -1,19 +1,43 @@
+# 무중단 배포: 앱은 두 자리(blue·green)로 뜨고 nginx 가 그중 하나로 보낸다. 평소에는 한 자리만 떠 있다.
+# 전환은 ci-cd agent 가 한다(deploy/active/ 갱신 → nginx reload). 수동 조작은 ci-cd README 참고.
+x-front: &front
+  build: .
+  image: front-app:${IMAGE_TAG:-local}   # ci-cd: CI 가 커밋 태그로 빌드, CD 가 그 태그로 교체
+  environment:
+    BACKEND_URL: ${BACKEND_URL:?set-in-env}      # backend(.158) — repo에 IP 금지
+    LOG_REDIS_URL: ${LOG_REDIS_URL:-}
+    SERVER_NAME: front
+    DEPLOY_MASTER_URL: ${DEPLOY_MASTER_URL:-}   # ci-cd master(.9:15000) — 배포 .env
+  healthcheck:
+    # localhost 금지 — 컨테이너 안에서 ::1로 풀리는 함정 (규약)
+    test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:11000/ || exit 1"]
+    interval: 30s
+    timeout: 10s
+    retries: 3
+  restart: unless-stopped
+  stop_grace_period: 30s
+
 services:
-  front:
-    build: .
-    image: front-app:${IMAGE_TAG:-local}   # ci-cd: CI 가 커밋 태그로 빌드, CD 가 그 태그로 교체
-    container_name: front-app
+  front-blue:
+    <<: *front
+    profiles: ["blue"]           # 이름을 지정해야만 뜬다 — `docker compose up -d` 가 두 자리를 한꺼번에 띄우지 않게
+    container_name: front-app-blue
+    ports:
+      - "127.0.0.1:11001:11000"    # agent 의 자리별 헬스 확인용 — 외부에는 nginx 만 열린다
+  front-green:
+    <<: *front
+    profiles: ["green"]
+    container_name: front-app-green
+    ports:
+      - "127.0.0.1:11002:11000"
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: front-nginx
     ports:
       - "11000:11000"        # 오라클 www.junproject.xyz conf가 이 포트로 프록시 (재활용)
-    environment:
-      BACKEND_URL: ${BACKEND_URL:?set-in-env}      # backend(.158) — repo에 IP 금지
-      LOG_REDIS_URL: ${LOG_REDIS_URL:-}
-      SERVER_NAME: front
-      DEPLOY_MASTER_URL: ${DEPLOY_MASTER_URL:-}   # ci-cd master(.9:15000) — 배포 .env
-    healthcheck:
-      # localhost 금지 — 컨테이너 안에서 ::1로 풀리는 함정 (규약)
-      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:11000/ || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    volumes:
+      # nginx 는 git 밖의 활성 디렉토리만 읽는다(서버에만 있다): nginx.conf(본 설정 사본) + upstream.conf(활성 자리).
+      # ci-cd agent 가 전환할 때 deploy/nginx/ 의 원본을 여기로 복사하고, 전환에 실패하면 이전 내용으로 되돌린다.
+      - ./deploy/active:/etc/nginx:ro
     restart: unless-stopped
