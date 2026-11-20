@@ -4,3 +4,6 @@ node_modules/
 next-env.d.ts
 .env.local
 *.tsbuildinfo
+
+# 활성 디렉토리 — 서버마다 다르고 ci-cd agent 가 바꾼다
+deploy/active/
